@@ -1,12 +1,11 @@
-﻿
-using Lab3.Models;
+﻿using Lab3.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Input;
 
 namespace Lab3
 {
@@ -35,6 +34,7 @@ namespace Lab3
 
                 _allProducts = products.Select(p => new ProductCard
                 {
+                    Id = p.Id,
                     Article = p.Article ?? "",
                     ProductName = p.Name?.Name ?? "Без названия",
                     CategoryName = p.Category?.Name ?? "Не указана",
@@ -46,7 +46,7 @@ namespace Lab3
                     Discount = p.Discount ?? 0
                 }).ToList();
 
-                ProductsList.ItemsSource = _allProducts;
+                ApplySearch();
             }
             catch (Exception ex)
             {
@@ -58,11 +58,8 @@ namespace Lab3
             }
         }
 
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void ApplySearch()
         {
-            if (ProductsList == null)
-                return;
-
             string search = SearchBox.Text.Trim();
 
             if (string.IsNullOrWhiteSpace(search))
@@ -80,16 +77,60 @@ namespace Lab3
                 p.SupplierName.Contains(search, StringComparison.OrdinalIgnoreCase)
             ).ToList();
         }
+
+        private void SearchBox_TextChanged(
+            object sender, TextChangedEventArgs e)
+        {
+            if (ProductsList != null && SearchBox != null)
+            {
+                ApplySearch();
+            }
+        }
+
+        private void AddProductButton_Click(
+            object sender, RoutedEventArgs e)
+        {
+            var window = new ProductEditWindow();
+            window.Owner = this;
+
+            if (window.ShowDialog() == true)
+            {
+                LoadProducts();
+            }
+        }
+
+        private void ProductCard_MouseLeftButtonUp(
+            object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not Border border ||
+                border.DataContext is not ProductCard card)
+            {
+                return;
+            }
+
+            var window = new ProductEditWindow(
+                new Product { Id = card.Id });
+
+            window.Owner = this;
+
+            if (window.ShowDialog() == true)
+            {
+                LoadProducts();
+            }
+        }
     }
 
     public class ProductCard
     {
+        public int Id { get; set; }
+
         public string Article { get; set; } = "";
         public string ProductName { get; set; } = "";
         public string CategoryName { get; set; } = "";
         public string Description { get; set; } = "";
         public string ManufacturerName { get; set; } = "";
         public string SupplierName { get; set; } = "";
+
         public double Price { get; set; }
         public double Count { get; set; }
         public double Discount { get; set; }
